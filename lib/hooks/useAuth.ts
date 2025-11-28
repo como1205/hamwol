@@ -129,12 +129,17 @@ export function useAuth() {
     // 로그아웃
     const signOut = async () => {
         try {
+            console.log('signOut: Starting logout...')
             const { error } = await supabase.auth.signOut()
+            console.log('signOut: Supabase response', { error })
+
             if (error) throw error
 
+            console.log('signOut: Redirecting to /login')
             router.push('/login')
             return { success: true, error: null }
         } catch (error: any) {
+            console.error('signOut: Error', error)
             return { success: false, error: error.message }
         }
     }

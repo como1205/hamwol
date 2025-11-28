@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 import ReactMarkdown from 'react-markdown'
+import { format } from 'date-fns'
 
 export default function BylawsPage() {
     const { currentBylaw, loading, error } = useBylaws()
@@ -45,6 +46,10 @@ export default function BylawsPage() {
                         <div className="mt-2 text-sm text-gray-500">
                             <span className="mr-4">버전: {currentBylaw.version}</span>
                             <span>시행일: {currentBylaw.effective_date}</span>
+                        </div>
+                        <div className="mt-2 space-y-1 text-xs text-gray-400">
+                            <p>작성일: {format(new Date(currentBylaw.created_at), 'yyyy-MM-dd HH:mm')}</p>
+                            <p>최종 수정일: {format(new Date(currentBylaw.updated_at), 'yyyy-MM-dd HH:mm')}</p>
                         </div>
                     </div>
                     <div className="prose prose-blue max-w-none dark:prose-invert">

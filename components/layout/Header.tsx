@@ -9,7 +9,10 @@ export function Header() {
 
     const handleSignOut = async () => {
         if (confirm('로그아웃하시겠습니까?')) {
-            await signOut()
+            const result = await signOut()
+            if (!result.success) {
+                alert(`로그아웃 실패: ${result.error}`)
+            }
         }
     }
 

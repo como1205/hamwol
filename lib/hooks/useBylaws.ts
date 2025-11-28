@@ -10,7 +10,9 @@ export interface Bylaw {
     content: string
     effective_date: string
     created_at: string
+    updated_at: string
     author_id: string
+    is_active: boolean
 }
 
 export function useBylaws({ autoFetch = true } = {}) {
@@ -27,21 +29,14 @@ export function useBylaws({ autoFetch = true } = {}) {
             const { data, error } = await supabase
                 .from('bylaws')
                 .select('*')
-                .order('effective_date', { ascending: false })
-                .limit(1)
-                .single()
+                .eq('is_active', true)
+                .maybeSingle()
 
             console.log('fetchCurrentBylaw: Supabase response', { data, error })
 
             if (error) {
-                if (error.code === 'PGRST116') {
-                    // 데이터가 없는 경우
-                    console.log('fetchCurrentBylaw: No data found (PGRST116)')
-                    setCurrentBylaw(null)
-                } else {
-                    console.error('fetchCurrentBylaw: Error', error)
-                    throw error
-                }
+                console.error('fetchCurrentBylaw: Error', error)
+                throw error
             } else {
                 console.log('fetchCurrentBylaw: Success', data)
                 setCurrentBylaw(data)
@@ -71,7 +66,7 @@ export function useBylaws({ autoFetch = true } = {}) {
         }
     }, [])
 
-    const createBylaw = async (bylaw: Omit<Bylaw, 'id' | 'created_at' | 'author_id'>) => {
+    const createBylaw = async (bylaw: Omit<Bylaw, 'id' | 'created_at' | 'updated_at' | 'author_id' | 'is_active'>) => {
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
@@ -82,6 +77,7 @@ export function useBylaws({ autoFetch = true } = {}) {
                 .insert({
                     ...bylaw,
                     author_id: user.id,
+                    is_active: true, // New bylaws are active by default
                 })
 
             if (error) throw error
@@ -92,6 +88,68 @@ export function useBylaws({ autoFetch = true } = {}) {
             return { success: true, error: null }
         } catch (err: any) {
             return { success: false, error: err.message }
+        }
+    }
+
+    const updateBylaw = async (id: string, updates: Partial<Omit<Bylaw, 'id' | 'created_at' | 'author_id'>>) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error('로그인이 필요합니다.')
+
+            // @ts-ignore
+            const { error } = await supabase
+                .from('bylaws')
+                .update({
+                    ...updates,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', id)
+
+            if (error) throw error
+
+            if (autoFetch) {
+                await fetchCurrentBylaw()
+            }
+            return { success: true, error: null }
+        } catch (err: any) {
+            return { success: false, error: err.message }
+        }
+    }
+
+    const setActiveBylaw = async (id: string) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) throw new Error('로그인이 필요합니다.')
+
+            // @ts-ignore
+            const { error } = await supabase
+                .from('bylaws')
+                .update({ is_active: true })
+                .eq('id', id)
+
+            if (error) throw error
+
+            if (autoFetch) {
+                await fetchCurrentBylaw()
+            }
+            return { success: true, error: null }
+        } catch (err: any) {
+            return { success: false, error: err.message }
+        }
+    }
+
+    const fetchBylawById = async (id: string) => {
+        try {
+            const { data, error } = await supabase
+                .from('bylaws')
+                .select('*')
+                .eq('id', id)
+                .single()
+
+            if (error) throw error
+            return { success: true, data, error: null }
+        } catch (err: any) {
+            return { success: false, data: null, error: err.message }
         }
     }
 
@@ -110,6 +168,9 @@ export function useBylaws({ autoFetch = true } = {}) {
         error,
         fetchCurrentBylaw,
         fetchBylawsHistory,
+        fetchBylawById,
         createBylaw,
+        updateBylaw,
+        setActiveBylaw,
     }
 }
