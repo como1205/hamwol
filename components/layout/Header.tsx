@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/lib/hooks/useAuth'
 import { Button } from '@/components/ui/button'
+import Link from 'next/link'
 
 export function Header() {
     const { member, signOut } = useAuth()
@@ -22,10 +23,10 @@ export function Header() {
                 <div className="flex items-center gap-6">
                     {/* Desktop Navigation */}
                     <nav className="hidden sm:flex items-center gap-6">
-                        <a href="/bylaws" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">회칙</a>
-                        <a href="/finance" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">장부</a>
-                        <a href="/members" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">회원</a>
-                        <a href="/my-page" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">내정보</a>
+                        <Link href="/bylaws" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">회칙</Link>
+                        <Link href="/finance" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">장부</Link>
+                        <Link href="/members" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">회원</Link>
+                        <Link href="/my-page" className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors">내정보</Link>
                     </nav>
 
                     <div className="flex items-center gap-4">
