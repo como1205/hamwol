@@ -8,7 +8,7 @@ export interface Member {
     email: string
     name: string
     phone: string | null
-    role: 'MEMBER' | 'ADMIN' | 'PRESIDENT'
+    role: 'GUEST' | 'MEMBER' | 'ADMIN' | 'PRESIDENT'
     status: 'ACTIVE' | 'INACTIVE' | 'WITHDRAWN'
     joined_at: string
     updated_at: string

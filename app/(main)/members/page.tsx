@@ -22,15 +22,25 @@ export default function MembersPage() {
             return
         }
 
-        // Prevent self-demotion warning (optional but good UX)
+        // Prevent self-demotion warning
         if (memberId === currentUser?.id) {
             if (!confirm('본인의 권한을 변경하시겠습니까? 관리자 권한을 잃을 수 있습니다.')) {
                 return
             }
         }
 
-        const newRole = currentRole === 'ADMIN' ? 'MEMBER' : 'ADMIN'
-        if (confirm(`해당 회원의 역할을 ${newRole === 'ADMIN' ? '관리자' : '일반 회원'}로 변경하시겠습니까?`)) {
+        // Determine new role based on current role
+        let newRole: 'GUEST' | 'MEMBER' | 'ADMIN' | 'PRESIDENT'
+        if (currentRole === 'GUEST') {
+            newRole = 'MEMBER'
+        } else if (currentRole === 'MEMBER') {
+            newRole = 'ADMIN'
+        } else {
+            newRole = 'MEMBER'
+        }
+
+        const roleLabel = newRole === 'ADMIN' ? '관리자' : newRole === 'MEMBER' ? '회원' : '일반 사용자'
+        if (confirm(`해당 회원의 역할을 ${roleLabel}로 변경하시겠습니까?`)) {
             const { success, error } = await updateMemberRole(memberId, newRole)
             if (!success) {
                 alert(`역할 변경 실패: ${error}`)
@@ -65,9 +75,11 @@ export default function MembersPage() {
                                 ? 'bg-purple-100 text-purple-700'
                                 : member.role === 'ADMIN'
                                     ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-gray-100 text-gray-700'
+                                    : member.role === 'GUEST'
+                                        ? 'bg-yellow-100 text-yellow-700'
+                                        : 'bg-gray-100 text-gray-700'
                                 }`}>
-                                {member.role === 'PRESIDENT' ? '회장' : member.role === 'ADMIN' ? '관리자' : '회원'}
+                                {member.role === 'PRESIDENT' ? '회장' : member.role === 'ADMIN' ? '관리자' : member.role === 'GUEST' ? '승인 대기' : '회원'}
                             </div>
                         </div>
 
@@ -75,12 +87,12 @@ export default function MembersPage() {
                             <span>가입일: {format(new Date(member.joined_at), 'yyyy.MM.dd')}</span>
                             {canManageRoles && member.role !== 'PRESIDENT' && (
                                 <Button
-                                    variant="ghost"
+                                    variant={member.role === 'GUEST' ? 'default' : 'ghost'}
                                     size="sm"
                                     className="h-6 px-2"
                                     onClick={() => handleRoleChange(member.id, member.role)}
                                 >
-                                    권한 변경
+                                    {member.role === 'GUEST' ? '승인' : '권한 변경'}
                                 </Button>
                             )}
                         </div>

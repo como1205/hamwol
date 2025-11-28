@@ -10,7 +10,7 @@ interface Member {
     email: string
     name: string
     phone: string | null
-    role: 'MEMBER' | 'ADMIN' | 'PRESIDENT'
+    role: 'GUEST' | 'MEMBER' | 'ADMIN' | 'PRESIDENT'
     status: 'ACTIVE' | 'INACTIVE' | 'WITHDRAWN'
     joined_at: string
     updated_at: string
@@ -31,16 +31,7 @@ export function useAuth() {
         const getUser = async () => {
             try {
                 console.log('useAuth: Getting user...')
-
-                // Timeout wrapper
-                const getUserWithTimeout = Promise.race([
-                    supabase.auth.getUser(),
-                    new Promise((_, reject) =>
-                        setTimeout(() => reject(new Error('getUser timeout')), 5000)
-                    )
-                ])
-
-                const { data: { user }, error: userError } = await getUserWithTimeout as any
+                const { data: { user }, error: userError } = await supabase.auth.getUser()
                 console.log('useAuth: User fetched', { user: !!user, userError })
 
                 if (!mounted) return

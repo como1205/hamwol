@@ -42,7 +42,7 @@ create table public.members (
   email text not null,
   name text not null,
   phone text,
-  role text not null default 'MEMBER' check (role in ('MEMBER', 'ADMIN', 'PRESIDENT')),
+  role text not null default 'GUEST' check (role in ('GUEST', 'MEMBER', 'ADMIN', 'PRESIDENT')),
   status text not null default 'ACTIVE' check (status in ('ACTIVE', 'INACTIVE', 'WITHDRAWN')),
   joined_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
@@ -103,9 +103,15 @@ create policy "Admins and Presidents can update members" on members
   );
 
 -- 2.2 Bylaws Policies
--- Everyone can view bylaws
-create policy "Bylaws are viewable by everyone" on bylaws
-  for select using (true);
+-- Only MEMBER+ can view bylaws
+create policy "Members can view bylaws" on bylaws
+  for select using (
+    exists (
+      select 1 from public.members
+      where members.id = auth.uid()
+      and members.role in ('MEMBER', 'ADMIN', 'PRESIDENT')
+    )
+  );
 
 -- Only Admins can insert bylaws
 create policy "Admins can insert bylaws" on bylaws
@@ -128,9 +134,15 @@ create policy "Admins can update bylaws" on bylaws
   );
 
 -- 2.3 Transactions Policies
--- Everyone can view transactions
-create policy "Transactions are viewable by everyone" on transactions
-  for select using (true);
+-- Only MEMBER+ can view transactions
+create policy "Members can view transactions" on transactions
+  for select using (
+    exists (
+      select 1 from public.members
+      where members.id = auth.uid()
+      and members.role in ('MEMBER', 'ADMIN', 'PRESIDENT')
+    )
+  );
 
 -- Only Admins can insert transactions
 create policy "Admins can insert transactions" on transactions
@@ -156,7 +168,7 @@ begin
     new.email,
     coalesce(new.raw_user_meta_data->>'name', 'Unknown'),
     new.raw_user_meta_data->>'phone',
-    'MEMBER',
+    'GUEST',
     'ACTIVE'
   );
   return new;
