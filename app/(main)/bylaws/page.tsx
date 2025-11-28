@@ -12,6 +12,8 @@ export default function BylawsPage() {
     const { member } = useAuth()
     const isAdmin = member?.role === 'ADMIN' || member?.role === 'PRESIDENT'
 
+    console.log('BylawsPage: Render', { currentBylaw, loading, error, member })
+
     if (loading) {
         return <div className="p-4 text-center">로딩 중...</div>
     }

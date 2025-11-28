@@ -22,6 +22,7 @@ export function useBylaws({ autoFetch = true } = {}) {
 
     const fetchCurrentBylaw = useCallback(async () => {
         try {
+            console.log('fetchCurrentBylaw: Starting fetch...')
             setLoading(true)
             const { data, error } = await supabase
                 .from('bylaws')
@@ -30,17 +31,23 @@ export function useBylaws({ autoFetch = true } = {}) {
                 .limit(1)
                 .single()
 
+            console.log('fetchCurrentBylaw: Supabase response', { data, error })
+
             if (error) {
                 if (error.code === 'PGRST116') {
                     // 데이터가 없는 경우
+                    console.log('fetchCurrentBylaw: No data found (PGRST116)')
                     setCurrentBylaw(null)
                 } else {
+                    console.error('fetchCurrentBylaw: Error', error)
                     throw error
                 }
             } else {
+                console.log('fetchCurrentBylaw: Success', data)
                 setCurrentBylaw(data)
             }
         } catch (err: any) {
+            console.error('fetchCurrentBylaw: Catch Error', err)
             setError(err.message)
         } finally {
             setLoading(false)
