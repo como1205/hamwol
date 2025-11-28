@@ -24,30 +24,46 @@ export function useAuth() {
     const supabase = createClient()
 
     useEffect(() => {
+        let mounted = true
+
         // 현재 사용자 가져오기
         const getUser = async () => {
-            console.log('useAuth: Getting user...')
-            const { data: { user } } = await supabase.auth.getUser()
-            console.log('useAuth: User fetched', user)
-            setUser(user)
+            try {
+                console.log('useAuth: Getting user...')
+                const { data: { user }, error: userError } = await supabase.auth.getUser()
+                console.log('useAuth: User fetched', { user, userError })
 
-            if (user) {
-                // 회원 정보 가져오기
-                console.log('useAuth: Fetching member data for user', user.id)
-                const { data: memberData, error } = await supabase
-                    .from('members')
-                    .select('*')
-                    .eq('id', user.id)
-                    .single()
+                if (!mounted) return
 
-                console.log('useAuth: Member data fetched', { memberData, error })
-                setMember(memberData)
-            } else {
-                console.log('useAuth: No user, redirecting to login')
-                router.push('/login')
+                setUser(user)
+
+                if (user) {
+                    // 회원 정보 가져오기
+                    console.log('useAuth: Fetching member data for user', user.id)
+                    const { data: memberData, error: memberError } = await supabase
+                        .from('members')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single()
+
+                    console.log('useAuth: Member data fetched', { memberData, memberError })
+
+                    if (mounted) {
+                        setMember(memberData)
+                        setLoading(false)
+                    }
+                } else {
+                    console.log('useAuth: No user found')
+                    if (mounted) {
+                        setLoading(false)
+                    }
+                }
+            } catch (err) {
+                console.error('useAuth: Error in getUser', err)
+                if (mounted) {
+                    setLoading(false)
+                }
             }
-
-            setLoading(false)
         }
 
         getUser()
@@ -55,7 +71,10 @@ export function useAuth() {
         // 인증 상태 변경 감지
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log('useAuth: Auth state changed', { event, session })
+                console.log('useAuth: Auth state changed', { event, session: !!session })
+
+                if (!mounted) return
+
                 setUser(session?.user ?? null)
 
                 if (session?.user) {
@@ -65,19 +84,24 @@ export function useAuth() {
                         .eq('id', session.user.id)
                         .single()
 
-                    setMember(memberData)
+                    if (mounted) {
+                        setMember(memberData)
+                        setLoading(false)
+                    }
                 } else {
-                    setMember(null)
+                    if (mounted) {
+                        setMember(null)
+                        setLoading(false)
+                    }
                 }
-
-                setLoading(false)
             }
         )
 
         return () => {
+            mounted = false
             subscription.unsubscribe()
         }
-    }, [supabase, router])
+    }, [])
 
     // 회원가입
     const signUp = async (email: string, password: string, name: string, phone?: string) => {
