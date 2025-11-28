@@ -26,18 +26,25 @@ export function useAuth() {
     useEffect(() => {
         // 현재 사용자 가져오기
         const getUser = async () => {
+            console.log('useAuth: Getting user...')
             const { data: { user } } = await supabase.auth.getUser()
+            console.log('useAuth: User fetched', user)
             setUser(user)
 
             if (user) {
                 // 회원 정보 가져오기
-                const { data: memberData } = await supabase
+                console.log('useAuth: Fetching member data for user', user.id)
+                const { data: memberData, error } = await supabase
                     .from('members')
                     .select('*')
                     .eq('id', user.id)
                     .single()
 
+                console.log('useAuth: Member data fetched', { memberData, error })
                 setMember(memberData)
+            } else {
+                console.log('useAuth: No user, redirecting to login')
+                router.push('/login')
             }
 
             setLoading(false)
@@ -48,6 +55,7 @@ export function useAuth() {
         // 인증 상태 변경 감지
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
+                console.log('useAuth: Auth state changed', { event, session })
                 setUser(session?.user ?? null)
 
                 if (session?.user) {
