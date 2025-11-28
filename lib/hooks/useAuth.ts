@@ -25,13 +25,23 @@ export function useAuth() {
 
     useEffect(() => {
         let mounted = true
+        let initialLoadComplete = false
 
         // 현재 사용자 가져오기
         const getUser = async () => {
             try {
                 console.log('useAuth: Getting user...')
-                const { data: { user }, error: userError } = await supabase.auth.getUser()
-                console.log('useAuth: User fetched', { user, userError })
+
+                // Timeout wrapper
+                const getUserWithTimeout = Promise.race([
+                    supabase.auth.getUser(),
+                    new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('getUser timeout')), 5000)
+                    )
+                ])
+
+                const { data: { user }, error: userError } = await getUserWithTimeout as any
+                console.log('useAuth: User fetched', { user: !!user, userError })
 
                 if (!mounted) return
 
@@ -46,22 +56,25 @@ export function useAuth() {
                         .eq('id', user.id)
                         .single()
 
-                    console.log('useAuth: Member data fetched', { memberData, memberError })
+                    console.log('useAuth: Member data fetched', { memberData: !!memberData, memberError })
 
                     if (mounted) {
                         setMember(memberData)
                         setLoading(false)
+                        initialLoadComplete = true
                     }
                 } else {
                     console.log('useAuth: No user found')
                     if (mounted) {
                         setLoading(false)
+                        initialLoadComplete = true
                     }
                 }
             } catch (err) {
                 console.error('useAuth: Error in getUser', err)
                 if (mounted) {
                     setLoading(false)
+                    initialLoadComplete = true
                 }
             }
         }
@@ -71,7 +84,13 @@ export function useAuth() {
         // 인증 상태 변경 감지
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
             async (event, session) => {
-                console.log('useAuth: Auth state changed', { event, session: !!session })
+                console.log('useAuth: Auth state changed', { event, session: !!session, initialLoadComplete })
+
+                // Skip initial SIGNED_IN events during page load
+                if (!initialLoadComplete && event === 'SIGNED_IN') {
+                    console.log('useAuth: Skipping initial SIGNED_IN event')
+                    return
+                }
 
                 if (!mounted) return
 
